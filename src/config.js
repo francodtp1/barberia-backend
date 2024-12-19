@@ -2,9 +2,6 @@ import { config } from "dotenv";
 config();
 
 const requiredEnv = [
-  'DB_HOST',
-  'DB_USER',
-  'DB_NAME',
   'JWT_SECRET',
   'FRONTEND_URL', 
   'FRONTEND_URL_WWW',
