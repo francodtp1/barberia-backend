@@ -1,13 +1,8 @@
 import mysql from 'mysql2';
-import { DB_HOST, DB_USER, DB_PASSWORD, DB_NAME } from './config.js';
+import { MYSQL_PUBLIC_URL } from './config.js';
 
-// Crear la conexión a la base de datos
-const connection = mysql.createConnection({
-    host: DB_HOST,
-    user: DB_USER,
-    password: DB_PASSWORD,
-    database: DB_NAME,
-});
+// Crear la conexión a la base de datos usando MYSQL_PUBLIC_URL
+const connection = mysql.createConnection(MYSQL_PUBLIC_URL);
 
 // Conectar y manejar errores
 connection.connect((err) => {
