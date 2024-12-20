@@ -1,13 +1,15 @@
-import pool from '../db.js';
+import pool from '../db.js'; 
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
 
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {
     const now = new Date();
-    const argTimeOffset = -3 * 60; // UTC-3 en minutos
-    const localNow = new Date(now.getTime() + argTimeOffset * 60 * 1000);
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const localNow = new Date(now.getTime() - offsetMs);
     return localNow.toISOString().slice(0, 19).replace('T', ' ');
 };
+
+console.log("La fecha y hora actual es:", obtenerFechaHoraActual());
 
 export const limpiarTurnosReservados = async () => {
     const now = obtenerFechaHoraActual();
@@ -111,25 +113,15 @@ export const createTurnoReservado = async (req, res) => {
 // Controlador para obtener todos los turnos reservados
 export const getTurnosReservados = async (req, res) => {
     try {
+
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
-
         const [turnosReservados] = await pool.query(`
-           SELECT 
-    tr.id, 
-    tr.cliente_id, 
-    tr.turno_id, 
-    DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha, 
-    TIME_FORMAT(td.hora, "%H:%i") AS hora, 
-    u.nombre AS cliente_nombre
-FROM 
-    turnos_reservados tr
-INNER JOIN 
-    turnos_disponibles td ON tr.turno_id = td.id
-INNER JOIN 
-    usuarios u ON tr.cliente_id = u.id
-ORDER BY 
-    td.fecha ASC, td.hora ASC;
+            SELECT tr.id, tr.cliente_id, tr.turno_id, td.fecha, TIME_FORMAT(td.hora, "%H:%i") AS hora, u.nombre AS cliente_nombre
+            FROM turnos_reservados tr
+            INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
+            INNER JOIN usuarios u ON tr.cliente_id = u.id
+            ORDER BY td.fecha ASC, td.hora ASC
         `);
 
         res.status(200).json(turnosReservados);
