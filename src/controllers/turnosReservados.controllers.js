@@ -1,12 +1,12 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
+import { format, utcToZonedTime } from 'date-fns-tz';
 
-// Utilidades comunes
 const obtenerFechaHoraActual = () => {
+    const timeZone = 'America/Argentina/Buenos_Aires';
     const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    const localNow = new Date(now.getTime() - offsetMs);
-    return localNow.toISOString().slice(0, 19).replace('T', ' ');
+    const zonedDate = utcToZonedTime(now, timeZone);
+    return format(zonedDate, 'yyyy-MM-dd HH:mm:ss', { timeZone });
 };
 
 export const limpiarTurnosReservados = async () => {
