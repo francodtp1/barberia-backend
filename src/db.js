@@ -10,6 +10,7 @@ try {
         waitForConnections: true,
         connectionLimit: 10,
         queueLimit: 0,
+        timezone: 'Z', 
     });
 
     // Probar la conexión
