@@ -1,6 +1,8 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
-import { format, utcToZonedTime } from 'date-fns-tz';
+import * as dateFnsTz from 'date-fns-tz';
+
+const { utcToZonedTime, format } = dateFnsTz;
 
 const obtenerFechaHoraActual = () => {
     const timeZone = 'America/Argentina/Buenos_Aires';
