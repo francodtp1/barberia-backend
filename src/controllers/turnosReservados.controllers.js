@@ -1,4 +1,4 @@
-import pool from '../db.js'; 
+import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
 
 // Utilidades comunes
@@ -117,7 +117,10 @@ export const getTurnosReservados = async (req, res) => {
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
         const [turnosReservados] = await pool.query(`
-            SELECT tr.id, tr.cliente_id, tr.turno_id, td.fecha, TIME_FORMAT(td.hora, "%H:%i") AS hora, u.nombre AS cliente_nombre
+            SELECT tr.id, tr.cliente_id, tr.turno_id, 
+                     DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha,  // Formato solo fecha
+                     TIME_FORMAT(td.hora, "%H:%i") AS hora, 
+                    u.nombre AS cliente_nombre
             FROM turnos_reservados tr
             INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
             INNER JOIN usuarios u ON tr.cliente_id = u.id
