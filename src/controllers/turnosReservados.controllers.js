@@ -1,12 +1,13 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
-import { format, utcToZonedTime } from 'date-fns-tz';
+import { format, zonedTimeToUtc } from 'date-fns-tz';
 
 const obtenerFechaHoraActual = () => {
-    const now = new Date();
     const argentinaTimeZone = 'America/Argentina/Buenos_Aires';
-    const zonedDate = utcToZonedTime(now, argentinaTimeZone);
-    return format(zonedDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: argentinaTimeZone });
+    const now = new Date();
+    const utcDate = zonedTimeToUtc(now, argentinaTimeZone);
+
+    return format(utcDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: argentinaTimeZone });
 };
 
 export const limpiarTurnosReservados = async () => {
