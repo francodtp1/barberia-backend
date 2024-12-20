@@ -1,5 +1,6 @@
 import bcrypt from 'bcrypt';
 import connection from '../db.js';
+import pool from '../db.js';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
 import { JWT_SECRET } from '../config.js';
@@ -21,7 +22,7 @@ export const register = async (req, res) => {
 
     try {
         // Verificar si el número de teléfono ya está registrado
-        const [existingPhone] = await connection.promise().query('SELECT * FROM usuarios WHERE telefono = ?', [telefono]);
+        const [existingPhone] = await pool.query('SELECT * FROM usuarios WHERE telefono = ?', [telefono]);
         if (existingPhone.length > 0) {
             return res.status(400).json({ message: 'El número de teléfono ya está registrado' });
         }
@@ -32,13 +33,13 @@ export const register = async (req, res) => {
         }
 
         // Verificar si el usuario ya existe por correo electrónico
-        const [userByEmail] = await connection.promise().query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        const [userByEmail] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
         if (userByEmail.length > 0) {
             return res.status(400).json({ message: 'El correo electrónico ya está registrado' });
         }
 
         // Verificar si el usuario ya existe por nombre
-        const [userByName] = await connection.promise().query('SELECT * FROM usuarios WHERE nombre = ?', [nombre]);
+        const [userByName] = await pool.query('SELECT * FROM usuarios WHERE nombre = ?', [nombre]);
         if (userByName.length > 0) {
             return res.status(400).json({ message: 'El nombre de usuario ya está registrado' });
         }
@@ -47,7 +48,7 @@ export const register = async (req, res) => {
         const hashedPassword = await bcrypt.hash(password, 10);
 
         // Insertar el usuario en la base de datos
-        await connection.promise().query(
+        await pool.query(
             'INSERT INTO usuarios (nombre, email, password, telefono) VALUES (?, ?, ?, ?)',
             [nombre, email, hashedPassword, telefono]
         );
@@ -72,7 +73,7 @@ export const login = async (req, res) => {
 
     try {
         // Verificar si el usuario existe en la base de datos
-        const [rows] = await connection.promise().query('SELECT * FROM usuarios WHERE email = ?', [email]);
+        const [rows] = await pool.query('SELECT * FROM usuarios WHERE email = ?', [email]);
 
         if (rows.length === 0) {
             return res.status(404).json({ message: 'El correo electrónico no está registrado' });
@@ -96,7 +97,7 @@ export const login = async (req, res) => {
         // Configurar la cookie con el token
         res.cookie('token-jwt', token, {
             httpOnly: true,
-            secure: true, // Solo para HTTPS
+            secure: 'production', // Solo para HTTPS
             sameSite: 'lax', // Subdominios cruzados
         });
 
@@ -129,7 +130,7 @@ export const checkUsuarioConTurno = async (req, res) => {
 
     try {
         // Consulta para obtener el turno reservado del usuario
-        const [result] = await connection.promise().query(
+        const [result] = await pool.query(
             `SELECT td.fecha, TIME_FORMAT(td.hora, '%H:%i') AS hora
              FROM turnos_reservados tr
              INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
@@ -158,7 +159,7 @@ export const checkUsuarioConTurno = async (req, res) => {
 
 export const getUsuarios = async (req, res) => {
     try {
-        const [usuarios] = await connection.promise().query(
+        const [usuarios] = await pool.query(
             `SELECT id, nombre, email, telefono, rol, con_turno, created_at 
              FROM usuarios 
              ORDER BY created_at DESC`

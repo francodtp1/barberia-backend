@@ -5,7 +5,6 @@ const requiredEnv = [
   'JWT_SECRET',
   'FRONTEND_URL', 
   'FRONTEND_URL_WWW',
-  'FRONTEND_URL', 
   'PORT' 
 ];    
 
