@@ -115,16 +115,20 @@ export const getTurnosReservados = async (req, res) => {
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
 
-        const [turnosReservados] = await pool.query(
-            `SELECT tr.id, tr.cliente_id, tr.turno_id, 
-                    DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha, 
-                    TIME_FORMAT(td.hora, "%H:%i") AS hora, 
-                    u.nombre AS cliente_nombre
-             FROM turnos_reservados tr
-             INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
-             INNER JOIN usuarios u ON tr.cliente_id = u.id
-             ORDER BY td.fecha ASC, td.hora ASC`
-        );
+        const [turnosReservados] = await pool.query(`
+            SELECT 
+                tr.id, 
+                tr.cliente_id, 
+                tr.turno_id, 
+                DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha, 
+                TIME_FORMAT(td.hora, '%H:%i') AS hora, 
+                u.nombre AS cliente_nombre
+            FROM turnos_reservados tr
+            INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
+            INNER JOIN usuarios u ON tr.cliente_id = u.id
+            ORDER BY td.fecha ASC, td.hora ASC
+        `);
+
 
         // Convertir a UTC explícitamente si no se está utilizando ya.
         const turnosUTC = turnosReservados.map((turno) => ({
