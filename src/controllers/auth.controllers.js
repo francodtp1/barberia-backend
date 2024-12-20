@@ -1,5 +1,4 @@
 import bcrypt from 'bcrypt';
-import connection from '../db.js';
 import pool from '../db.js';
 import { validationResult } from 'express-validator';
 import jwt from 'jsonwebtoken';
