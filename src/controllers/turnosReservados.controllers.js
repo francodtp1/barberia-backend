@@ -1,25 +1,29 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
+import { format, utcToZonedTime } from 'date-fns-tz';
 
-// Utilidades comunes
 const obtenerFechaHoraActual = () => {
     const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    const localNow = new Date(now.getTime() - offsetMs);
-    return localNow.toISOString().slice(0, 19).replace('T', ' ');
+    const argentinaTimeZone = 'America/Argentina/Buenos_Aires';
+    const zonedDate = utcToZonedTime(now, argentinaTimeZone);
+    return format(zonedDate, 'yyyy-MM-dd HH:mm:ss', { timeZone: argentinaTimeZone });
 };
 
 export const limpiarTurnosReservados = async () => {
     const now = obtenerFechaHoraActual();
     try {
         // Obtener IDs de usuarios con turnos vencidos
+        const argentinaTimeZone = 'America/Argentina/Buenos_Aires';
+        const zonedNow = utcToZonedTime(new Date(), argentinaTimeZone);
+
         const [usuariosConTurnosVencidos] = await pool.query(
             `SELECT DISTINCT usuarios.id FROM turnos_reservados
              JOIN turnos_disponibles ON turnos_reservados.turno_id = turnos_disponibles.id
              JOIN usuarios ON turnos_reservados.cliente_id = usuarios.id
              WHERE CONCAT(turnos_disponibles.fecha, ' ', turnos_disponibles.hora) < ?`,
-            [now]
+            [format(zonedNow, 'yyyy-MM-dd HH:mm:ss', { timeZone: argentinaTimeZone })]
         );
+
 
         let usuariosActualizados = 0;
         if (usuariosConTurnosVencidos.length > 0) {
