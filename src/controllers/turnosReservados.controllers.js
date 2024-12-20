@@ -1,12 +1,10 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
+import { DateTime } from 'luxon'; // Usaremos Luxon para manejar zonas horarias
 
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {
-    const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    const localNow = new Date(now.getTime() - offsetMs);
-    return localNow.toISOString().slice(0, 19).replace('T', ' ');
+    return DateTime.now().setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm:ss');
 };
 
 console.log("La fecha y hora actual es:", obtenerFechaHoraActual());
@@ -51,7 +49,6 @@ export const limpiarTurnosReservados = async () => {
         console.error('Error al limpiar turnos reservados vencidos:', error);
     }
 };
-
 
 // Controlador para crear un turno reservado
 export const createTurnoReservado = async (req, res) => {
@@ -117,10 +114,7 @@ export const getTurnosReservados = async (req, res) => {
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
         const [turnosReservados] = await pool.query(`
-            SELECT tr.id, tr.cliente_id, tr.turno_id, 
-                     DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha,  
-                     TIME_FORMAT(td.hora, "%H:%i") AS hora, 
-                    u.nombre AS cliente_nombre
+            SELECT tr.id, tr.cliente_id, tr.turno_id, td.fecha, TIME_FORMAT(td.hora, "%H:%i") AS hora, u.nombre AS cliente_nombre
             FROM turnos_reservados tr
             INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
             INNER JOIN usuarios u ON tr.cliente_id = u.id
