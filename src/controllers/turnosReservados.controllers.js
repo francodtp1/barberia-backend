@@ -1,4 +1,4 @@
-import connection from '../db.js';
+import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
 
 // Utilidades comunes
@@ -13,7 +13,7 @@ export const limpiarTurnosReservados = async () => {
     const now = obtenerFechaHoraActual();
     try {
         // Obtener IDs de usuarios con turnos vencidos
-        const [usuariosConTurnosVencidos] = await connection.promise().query(
+        const [usuariosConTurnosVencidos] = await pool.query(
             `SELECT DISTINCT usuarios.id FROM turnos_reservados
              JOIN turnos_disponibles ON turnos_reservados.turno_id = turnos_disponibles.id
              JOIN usuarios ON turnos_reservados.cliente_id = usuarios.id
@@ -24,7 +24,7 @@ export const limpiarTurnosReservados = async () => {
         let usuariosActualizados = 0;
         if (usuariosConTurnosVencidos.length > 0) {
             const usuariosIds = usuariosConTurnosVencidos.map((u) => u.id);
-            const [updateResult] = await connection.promise().query(
+            const [updateResult] = await pool.query(
                 `UPDATE usuarios SET con_turno = FALSE WHERE id IN (?)`,
                 [usuariosIds]
             );
@@ -32,7 +32,7 @@ export const limpiarTurnosReservados = async () => {
         }
 
         // Eliminar turnos reservados vencidos
-        const [deleteResult] = await connection.promise().query(
+        const [deleteResult] = await pool.query(
             `DELETE turnos_reservados FROM turnos_reservados
              JOIN turnos_disponibles ON turnos_reservados.turno_id = turnos_disponibles.id
              WHERE CONCAT(turnos_disponibles.fecha, ' ', turnos_disponibles.hora) < ?`,
@@ -57,7 +57,7 @@ export const createTurnoReservado = async (req, res) => {
 
     try {
         // Verificar si el cliente ya tiene un turno reservado
-        const [usuario] = await connection.promise().query(
+        const [usuario] = await pool.query(
             'SELECT con_turno FROM usuarios WHERE id = ?',
             [cliente_id]
         );
@@ -71,7 +71,7 @@ export const createTurnoReservado = async (req, res) => {
         }
 
         // Verificar si el turno está disponible
-        const [turno] = await connection.promise().query(
+        const [turno] = await pool.query(
             'SELECT disponible FROM turnos_disponibles WHERE id = ?',
             [turno_id]
         );
@@ -85,18 +85,18 @@ export const createTurnoReservado = async (req, res) => {
         }
 
         // Crear el turno reservado
-        await connection.promise().query(
+        await pool.query(
             'INSERT INTO turnos_reservados (cliente_id, turno_id) VALUES (?, ?)',
             [cliente_id, turno_id]
         );
 
         // Actualizar el estado del cliente y del turno
-        await connection.promise().query(
+        await pool.query(
             'UPDATE usuarios SET con_turno = TRUE WHERE id = ?',
             [cliente_id]
         );
 
-        await connection.promise().query(
+        await pool.query(
             'UPDATE turnos_disponibles SET disponible = FALSE WHERE id = ?',
             [turno_id]
         );
@@ -114,7 +114,7 @@ export const getTurnosReservados = async (req, res) => {
 
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
-        const [turnosReservados] = await connection.promise().query(`
+        const [turnosReservados] = await pool.query(`
             SELECT tr.id, tr.cliente_id, tr.turno_id, td.fecha, TIME_FORMAT(td.hora, "%H:%i") AS hora, u.nombre AS cliente_nombre
             FROM turnos_reservados tr
             INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
@@ -135,7 +135,7 @@ export const deleteTurnoReservado = async (req, res) => {
 
     try {
         // Obtener los datos del turno reservado antes de eliminarlo
-        const [turnoReservado] = await connection.promise().query(
+        const [turnoReservado] = await pool.query(
             'SELECT cliente_id, turno_id FROM turnos_reservados WHERE id = ?',
             [id]
         );
@@ -147,18 +147,18 @@ export const deleteTurnoReservado = async (req, res) => {
         const { cliente_id: clienteId, turno_id: turnoId } = turnoReservado[0];
 
         // Eliminar el turno reservado
-        await connection.promise().query(
+        await pool.query(
             'DELETE FROM turnos_reservados WHERE id = ?',
             [id]
         );
 
         // Actualizar el estado del usuario y del turno
-        await connection.promise().query(
+        await pool.query(
             'UPDATE usuarios SET con_turno = FALSE WHERE id = ?',
             [clienteId]
         );
 
-        await connection.promise().query(
+        await pool.query(
             'UPDATE turnos_disponibles SET disponible = TRUE WHERE id = ?',
             [turnoId]
         );

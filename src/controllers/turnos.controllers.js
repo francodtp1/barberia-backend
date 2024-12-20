@@ -1,4 +1,4 @@
-import connection from '../db.js';
+import pool from '../db.js';
 import { limpiarTurnosReservados } from './turnosReservados.controllers.js';
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {
@@ -11,7 +11,7 @@ const obtenerFechaHoraActual = () => {
 export const limpiarTurnosDisponibles = async () => {
     const now = obtenerFechaHoraActual();
     try {
-        const [result] = await connection.promise().query(
+        const [result] = await pool.query(
             `DELETE FROM turnos_disponibles WHERE CONCAT(fecha, ' ', hora) < ?`,
             [now]
         );
@@ -40,7 +40,7 @@ export const createTurno = async (req, res) => {
         }
 
         // Insertar un nuevo turno disponible
-        await connection.promise().query(
+        await pool.query(
             'INSERT INTO turnos_disponibles (fecha, hora) VALUES (?, ?)',
             [fecha, hora]
         );
@@ -60,7 +60,7 @@ export const createTurno = async (req, res) => {
 export const getTurnos = async (req, res) => {
     try {
         await limpiarTurnosDisponibles();
-        const [turnos] = await connection.promise().query('SELECT * FROM turnos_disponibles');
+        const [turnos] = await pool.query('SELECT * FROM turnos_disponibles');
 
         res.status(200).json(turnos);
     } catch (error) {
@@ -76,7 +76,7 @@ export const getTurnosDisponibles = async (req, res) => {
         await limpiarTurnosDisponibles();
 
         // Consulta para obtener los turnos disponibles con formato de hora
-        const [turnosDisponibles] = await connection.promise().query(`
+        const [turnosDisponibles] = await pool.query(`
             SELECT 
                 id, 
                 fecha, 
@@ -102,7 +102,7 @@ export const getTurnosByFecha = async (req, res) => {
 
     try {
         await limpiarTurnosDisponibles();
-        const [turnos] = await connection.promise().query(
+        const [turnos] = await pool.query(
             'SELECT id, fecha, TIME_FORMAT(hora, "%H:%i") AS hora FROM turnos_disponibles WHERE fecha = ? ORDER BY hora ASC',
             [fecha]
         );
@@ -119,7 +119,7 @@ export const deleteTurno = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await connection.promise().query(
+        const [result] = await pool.query(
             'DELETE FROM turnos_disponibles WHERE id = ?',
             [id]
         );
@@ -141,7 +141,7 @@ export const eliminarTurnosAnteriores = async () => {
         const today = new Date();
         const formattedToday = today.toISOString().split('T')[0]; // Formato: 'YYYY-MM-DD'
 
-        const [result] = await connection.promise().query(
+        const [result] = await pool.query(
             'DELETE FROM turnos_disponibles WHERE fecha < ?',
             [formattedToday]
         );
