@@ -4,9 +4,10 @@ import { limpiarTurnosDisponibles } from './turnos.controllers.js';
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {
     const now = new Date();
-    return now.toISOString().slice(0, 19).replace('T', ' ');
+    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
+    const localNow = new Date(now.getTime() - offsetMs);
+    return localNow.toISOString().slice(0, 19).replace('T', ' ');
 };
-
 
 export const limpiarTurnosReservados = async () => {
     const now = obtenerFechaHoraActual();
@@ -16,8 +17,7 @@ export const limpiarTurnosReservados = async () => {
             `SELECT DISTINCT usuarios.id FROM turnos_reservados
              JOIN turnos_disponibles ON turnos_reservados.turno_id = turnos_disponibles.id
              JOIN usuarios ON turnos_reservados.cliente_id = usuarios.id
-             WHERE CONCAT(DATE_FORMAT(CONVERT_TZ(turnos_disponibles.fecha, '+00:00', @@session.time_zone), '%Y-%m-%d'), ' ', 
-             turnos_disponibles.hora) < ?`,
+             WHERE CONCAT(turnos_disponibles.fecha, ' ', turnos_disponibles.hora) < ?`,
             [now]
         );
 
@@ -114,28 +114,15 @@ export const getTurnosReservados = async (req, res) => {
 
         await limpiarTurnosReservados();
         await limpiarTurnosDisponibles();
-
         const [turnosReservados] = await pool.query(`
-            SELECT 
-                tr.id, 
-                tr.cliente_id, 
-                tr.turno_id, 
-                DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha, 
-                TIME_FORMAT(td.hora, '%H:%i') AS hora, 
-                u.nombre AS cliente_nombre
+            SELECT tr.id, tr.cliente_id, tr.turno_id, td.fecha, TIME_FORMAT(td.hora, "%H:%i") AS hora, u.nombre AS cliente_nombre
             FROM turnos_reservados tr
             INNER JOIN turnos_disponibles td ON tr.turno_id = td.id
             INNER JOIN usuarios u ON tr.cliente_id = u.id
             ORDER BY td.fecha ASC, td.hora ASC
         `);
 
-
-        // Convertir a UTC explícitamente si no se está utilizando ya.
-        const turnosUTC = turnosReservados.map((turno) => ({
-            ...turno,
-            fecha: new Date(turno.fecha).toISOString().split('T')[0], // UTC
-        }));
-        res.status(200).json(turnosUTC);
+        res.status(200).json(turnosReservados);
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error al obtener los turnos reservados' });
