@@ -118,7 +118,7 @@ export const getTurnosReservados = async (req, res) => {
         await limpiarTurnosDisponibles();
         const [turnosReservados] = await pool.query(`
             SELECT tr.id, tr.cliente_id, tr.turno_id, 
-                     DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha,  // Formato solo fecha
+                     DATE_FORMAT(td.fecha, '%Y-%m-%d') AS fecha,  
                      TIME_FORMAT(td.hora, "%H:%i") AS hora, 
                     u.nombre AS cliente_nombre
             FROM turnos_reservados tr
