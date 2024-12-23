@@ -1,6 +1,6 @@
 import pool from '../db.js';
 import { limpiarTurnosDisponibles } from './turnos.controllers.js';
-import { DateTime } from 'luxon'; // Usaremos Luxon para manejar zonas horarias
+import { DateTime } from 'luxon'; 
 
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {

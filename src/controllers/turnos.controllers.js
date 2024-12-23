@@ -1,11 +1,10 @@
 import pool from '../db.js';
 import { limpiarTurnosReservados } from './turnosReservados.controllers.js';
+import { DateTime } from 'luxon'; 
+
 // Utilidades comunes
 const obtenerFechaHoraActual = () => {
-    const now = new Date();
-    const offsetMs = now.getTimezoneOffset() * 60 * 1000;
-    const localNow = new Date(now.getTime() - offsetMs);
-    return localNow.toISOString().slice(0, 19).replace('T', ' ');
+    return DateTime.now().setZone('America/Argentina/Buenos_Aires').toFormat('yyyy-MM-dd HH:mm:ss');
 };
 
 export const limpiarTurnosDisponibles = async () => {
@@ -29,7 +28,7 @@ export const createTurno = async (req, res) => {
 
     try {
         // Obtener la fecha y hora actuales
-        const now = new Date();
+        const now = obtenerFechaHoraActual()
         const selectedDateTime = new Date(`${fecha}T${hora}`);
 
         // Validar que la fecha y hora no hayan pasado
